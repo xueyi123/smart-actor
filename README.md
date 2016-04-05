@@ -11,3 +11,5 @@
 <br>actor.scheduleAtFixedRateTask();
 <br>//切换执行线程,用于切换工作场景时切换执行线程，比如用户进入某个房间，则要设置为房间的执行线程，这样就消除多线程的问题)
 <br>actor.switchExecutor();
+###API文档查看
+http://doc.iih5.com/smart-actor/index.html
