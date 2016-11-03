@@ -15,8 +15,8 @@
  */
 package com.iih5.actor;
 
-import com.iih5.actor.util.ConsoleUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 每个Actor执行线程维护一个任务队列，提交的任务会首先进入队列，用于确保提交的任务按顺序执行
  */
 public class ActorExecutor implements IActorExecutor {
-	private Logger logger = Logger.getLogger(ActorExecutor.class);
+	private Logger logger = LoggerFactory.getLogger(ActorExecutor.class);
 	private BlockingQueue<Runnable> queue=new LinkedBlockingQueue<Runnable>(500000);
 	private Thread thread;
 	private AtomicInteger actorCount=new AtomicInteger(0);
@@ -38,7 +38,7 @@ public class ActorExecutor implements IActorExecutor {
 				Runnable task=queue.take();
 				task.run();
 			} catch (Exception e) {
-				logger.error(ConsoleUtil.exceptionToString(e));
+				logger.error("线程异常：",e);
 			}
 		}
 	}
@@ -49,7 +49,7 @@ public class ActorExecutor implements IActorExecutor {
 			try {
 				queue.put(task);
 			} catch (Exception e) {
-				logger.error(ConsoleUtil.exceptionToString(e));
+				logger.error("线程异常：",e);
 			}
 		}
 

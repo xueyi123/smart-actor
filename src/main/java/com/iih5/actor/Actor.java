@@ -20,6 +20,8 @@ import com.iih5.actor.scheduler.LoopScheduledTask;
 import com.iih5.actor.scheduler.ScheduledTask;
 import com.iih5.actor.scheduler.TaskFutureListener;
 import com.iih5.actor.util.GlobalConstant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 任务不会马上提交执行，而是会先放入缓冲队列中等待状态恢复正常时下次任务激活执行
  * */
 public class Actor implements IActor {
+	Logger logger = LoggerFactory.getLogger(Actor.class);
 	protected volatile IActorExecutor executor;
 	private BlockingQueue<Runnable> waitQueue=new LinkedBlockingQueue<Runnable>();
 	private volatile ActorState state= ActorState.NORMAL;
@@ -61,7 +64,7 @@ public class Actor implements IActor {
 				throw new NullPointerException("任务处理器executor不能为空,否则提交的任务不能执行");
 			}
 			if(this.executor!=null&&this.executor.workThread()!=null&&this.executor!=executor){//切换Executor
-				System.err.println("Actor 切换线程:old={},new={} "+this.executor.workThread()+executor.workThread());
+				logger.info("Actor 切换线程:old={},new={} "+this.executor.workThread()+executor.workThread());
 				state= ActorState.TRANSITIVE;
 				transfer(executor);
 				state= ActorState.NORMAL;
@@ -73,7 +76,12 @@ public class Actor implements IActor {
 
 		
 	}
-    /**
+
+	public void switchExecutor(IActorExecutor executor) {
+		setExecutor(executor);
+	}
+
+	/**
      * 将缓冲队列中的任务提交到executor的执行队列中
      * */
 	private void transfer(IActorExecutor executor) {
@@ -99,14 +107,14 @@ public class Actor implements IActor {
             try{
                 //双重检查，避免多余锁开销，先判定为过渡状态加一次锁，然后再判断状态
                 if(state== ActorState.TRANSITIVE){
-                	System.err.println("过渡期新任务:actor={}"+this.toString());
+					logger.info("过渡期新任务:actor={}"+this.toString());
                     waitQueue.put(task);
                     return true;
                 }else{
                     return  false;
                 }
             }catch (Exception e){
-            	System.err.println("处理过渡期任务异常"+e);
+				logger.info("处理过渡期任务异常",e);
             }finally {
                 lock.unlock();
             }
@@ -203,7 +211,7 @@ public class Actor implements IActor {
 			futures.put(task.getName(), future);
 			return futures.get(task.getName());
 		}else{
-			System.err.println("定时任务已存在:name={}"+task.getName());
+			logger.info("定时任务已存在:name={}"+task.getName());
 			return null;
 		}
 	}
@@ -217,7 +225,7 @@ public class Actor implements IActor {
 			futures.put(task.getName(), future);
 			return futures.get(task.getName());
 		}else{
-			System.err.println("定时任务已存在:name={}"+task.getName());
+			logger.info("定时任务已存在:name={}"+task.getName());
 			return null;
 		}
 
@@ -234,8 +242,9 @@ public class Actor implements IActor {
 			boolean b=future.cancel(mayInterruptIfRunning);
 			return b;
 		}else{
-			System.err.println("任务不存在:name = {}"+ name);
+			logger.info("任务不存在:name = {}"+ name);
 			return false;
+
 		}
 
 	}
